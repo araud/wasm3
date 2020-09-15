@@ -11,7 +11,11 @@
 #include "m3_core.h"
 
 // TODO: perform bounds checks
-#define m3ApiOffsetToPtr(offset)   (void*)((u8*)_mem + (u32)(offset))
+#ifdef M3_VMEM
+    #define m3ApiOffsetToPtr(offset)   m3LockVMem((void*)((u8*)_mem + (u32)(offset)))
+#else
+    #define m3ApiOffsetToPtr(offset)   (void*)((u8*)_mem + (u32)(offset))
+#endif
 #define m3ApiPtrToOffset(ptr)      (u32)((u8*)ptr - (u8*)_mem)
 
 #define m3ApiReturnType(TYPE)      TYPE* raw_return = ((TYPE*) (_sp));

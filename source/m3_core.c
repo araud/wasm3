@@ -489,3 +489,26 @@ M3Result  Read_utf8  (cstr_t * o_utf8, bytes_t * io_bytes, cbytes_t i_end)
 
     return result;
 }
+
+#ifdef M3_VMEM
+
+void* m3MemCpy(u8 *dst, const u8 *src, size_t n)
+{
+    void* plDst = m3LockVMem(dst);
+    void* plStr = m3LockVMem((void*)(src));
+    return memcpy(plDst, plStr, n);
+}
+
+void* m3LockVMem(void* ptr)
+{
+    if ((u8 *)ptr > (u8 *)(M3_VMEM))
+    {
+        return (u8 *)ptr - M3_VMEM;
+    }
+    else
+    {
+        return ptr;
+    }
+}
+
+#endif

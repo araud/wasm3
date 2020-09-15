@@ -30,7 +30,14 @@ d_m3BeginExternC
 
 #endif
 
-#   define m3MemData(mem)           (u8*)(((M3MemoryHeader*)(mem))+1)
+#ifdef M3_VMEM
+    #define m3MemData(mem)           ((u8*)(((M3MemoryHeader*)(mem))+1) + M3_VMEM)
+    void* m3MemCpy(void *dst, const void *src, size_t n);
+#else
+    #define m3MemData(mem)           (u8*)(((M3MemoryHeader*)(mem))+1)
+    #define m3MemCpy memcpy
+#endif
+
 #   define m3MemRuntime(mem)        (((M3MemoryHeader*)(mem))->runtime)
 #   define m3MemInfo(mem)           (&(((M3MemoryHeader*)(mem))->runtime->memory))
 

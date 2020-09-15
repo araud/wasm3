@@ -764,7 +764,7 @@ d_m3Op(DEST_TYPE##_Load_##SRC_TYPE##_r)                 \
     )) {                                                \
         u8* src8 = m3MemData(_mem) + operand;           \
         SRC_TYPE value;                                 \
-        memcpy(&value, src8, sizeof(value));            \
+        m3MemCpy(&value, src8, sizeof(value));            \
         M3_BSWAP_##SRC_TYPE(value);                     \
         REG = (DEST_TYPE)value;                         \
         nextOp ();                                      \
@@ -781,7 +781,7 @@ d_m3Op(DEST_TYPE##_Load_##SRC_TYPE##_s)                 \
     )) {                                                \
         u8* src8 = m3MemData(_mem) + operand;           \
         SRC_TYPE value;                                 \
-        memcpy(&value, src8, sizeof(value));            \
+        m3MemCpy(&value, src8, sizeof(value));            \
         M3_BSWAP_##SRC_TYPE(value);                     \
         REG = (DEST_TYPE)value;                         \
         nextOp ();                                      \
@@ -826,7 +826,7 @@ d_m3Op  (SRC_TYPE##_Store_##DEST_TYPE##_rs)             \
         u8* mem8 = m3MemData(_mem) + operand;           \
         DEST_TYPE val = (DEST_TYPE) REG;                \
         M3_BSWAP_##DEST_TYPE(val);                      \
-        memcpy(mem8, &val, sizeof(val));                \
+        m3MemCpy(mem8, &val, sizeof(val));                \
         nextOp ();                                      \
     } else d_outOfBounds;                               \
 }                                                       \
@@ -843,7 +843,7 @@ d_m3Op  (SRC_TYPE##_Store_##DEST_TYPE##_sr)             \
         u8* mem8 = m3MemData(_mem) + operand;           \
         DEST_TYPE val = (DEST_TYPE) value;              \
         M3_BSWAP_##DEST_TYPE(val);                      \
-        memcpy(mem8, &val, sizeof(val));                \
+        m3MemCpy(mem8, &val, sizeof(val));                \
         nextOp ();                                      \
     } else d_outOfBounds;                               \
 }                                                       \
@@ -860,7 +860,7 @@ d_m3Op  (SRC_TYPE##_Store_##DEST_TYPE##_ss)             \
         u8* mem8 = m3MemData(_mem) + operand;           \
         DEST_TYPE val = (DEST_TYPE) value;              \
         M3_BSWAP_##DEST_TYPE(val);                      \
-        memcpy(mem8, &val, sizeof(val));                \
+        m3MemCpy(mem8, &val, sizeof(val));                \
         nextOp ();                                      \
     } else d_outOfBounds;                               \
 }
@@ -879,7 +879,7 @@ d_m3Op  (TYPE##_Store_##TYPE##_rr)                      \
         u8* mem8 = m3MemData(_mem) + operand;           \
         TYPE val = (TYPE) REG;                          \
         M3_BSWAP_##TYPE(val);                           \
-        memcpy(mem8, &val, sizeof(val));                \
+        m3MemCpy(mem8, &val, sizeof(val));                \
         nextOp ();                                      \
     } else d_outOfBounds;                               \
 }

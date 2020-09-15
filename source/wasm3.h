@@ -13,6 +13,13 @@
 #define M3_VERSION_REV   7
 #define M3_VERSION       "0.4.7"
 
+//virtual memory management
+//#define M3_VMEM (1ull<<63) //comment out to return to real memory
+
+#ifdef M3_VMEM
+void* m3LockVMem(void* ptr);
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>

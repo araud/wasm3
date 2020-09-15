@@ -565,7 +565,7 @@ _       (EvaluateExpression (io_module, & segmentOffset, c_m3Type_i32, & start, 
             u8 * dest = m3MemData (io_memory->mallocated) + segmentOffset;
 
             if ((size_t) segmentOffset + segment->size <= io_memory->mallocated->length)
-                memcpy (dest, segment->data, segment->size);
+                m3MemCpy (dest, segment->data, segment->size);
             else
                 _throw ("data segment overflowing linear memory");
         }
