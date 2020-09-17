@@ -14,7 +14,9 @@
 #define M3_VERSION       "0.4.7"
 
 //virtual memory management
-//#define M3_VMEM (1ull<<63) //comment out to return to real memory
+#define M3_VMEM (1ull<<63) //comment out to return to real memory
+#define M3_MaxMem 1024*1024*1024
+
 
 #ifdef M3_VMEM
 void* m3LockVMem(void* ptr);

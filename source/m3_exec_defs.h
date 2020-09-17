@@ -31,7 +31,7 @@ d_m3BeginExternC
 #endif
 
 #ifdef M3_VMEM
-    #define m3MemData(mem)           ((u8*)(((M3MemoryHeader*)(mem))+1) + M3_VMEM)
+    #define m3MemData(mem)           (u8*)(M3_VMEM)
     void* m3MemCpy(void *dst, const void *src, size_t n);
 #else
     #define m3MemData(mem)           (u8*)(((M3MemoryHeader*)(mem))+1)

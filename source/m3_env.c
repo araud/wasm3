@@ -469,6 +469,10 @@ M3Result  ResizeMemory  (IM3Runtime io_runtime, u32 i_numPages)
     i_numPagesToAlloc = 256;
 #endif
 
+#ifdef M3_VMEM
+    memory->maxPages = M3_MaxMem / d_m3MemPageSize;
+#endif
+
     if (numPagesToAlloc <= memory->maxPages)
     {
         size_t numPageBytes = numPagesToAlloc * d_m3MemPageSize;
@@ -484,15 +488,24 @@ M3Result  ResizeMemory  (IM3Runtime io_runtime, u32 i_numPages)
         if (numPreviousBytes)
             numPreviousBytes += sizeof (M3MemoryHeader);
 
+#ifdef M3_VMEM
+        if (!memory->mallocated)
+        {
+            _(m3Reallocate (& memory->mallocated, sizeof (M3MemoryHeader), 0));
+            memory->mallocated->length =  M3_MaxMem;
+        }
+#else
 _       (m3Reallocate (& memory->mallocated, numBytes, numPreviousBytes));
+        memory->mallocated->length =  numPageBytes;
+#endif
 
 # if d_m3LogRuntime
         M3MemoryHeader * oldMallocated = memory->mallocated;
+        memory->mallocated->length =  numPageBytes;
 # endif
 
         memory->numPages = numPagesToAlloc;
 
-        memory->mallocated->length =  numPageBytes;
         memory->mallocated->runtime = io_runtime;
 
         memory->mallocated->maxStack = (m3slot_t *) io_runtime->stack + io_runtime->numStackSlots;

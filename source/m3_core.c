@@ -499,11 +499,19 @@ void* m3MemCpy(u8 *dst, const u8 *src, size_t n)
     return memcpy(plDst, plStr, n);
 }
 
+u8 g_vmem[M3_MaxMem] = {};
+
 void* m3LockVMem(void* ptr)
 {
     if ((u8 *)ptr > (u8 *)(M3_VMEM))
     {
-        return (u8 *)ptr - M3_VMEM;
+        size_t offset = (size_t)ptr - M3_VMEM;
+        if (offset > M3_MaxMem)
+        {
+            printf("m3LockVMem: %zu > %d", offset, M3_MaxMem);
+            return 0;
+        }
+        return &g_vmem[offset];
     }
     else
     {
