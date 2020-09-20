@@ -297,8 +297,8 @@ m3ApiRawFunction(m3_wasi_unstable_fd_read)
     uvwasi_errno_t ret;
 
     for (uvwasi_size_t i = 0; i < iovs_len; ++i) {
-        iovs[i].buf = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iovs[i].buf));
         iovs[i].buf_len = m3ApiReadMem32(&wasi_iovs[i].buf_len);
+        iovs[i].buf = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iovs[i].buf), iovs[i].buf_len);
     }
 
     ret = uvwasi_fd_read(&uvwasi, fd, (const uvwasi_iovec_t *) iovs, iovs_len, &num_read);
@@ -325,8 +325,8 @@ m3ApiRawFunction(m3_wasi_unstable_fd_write)
     uvwasi_errno_t ret;
 
     for (uvwasi_size_t i = 0; i < iovs_len; ++i) {
-        iovs[i].buf = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iovs[i].buf));
         iovs[i].buf_len = m3ApiReadMem32(&wasi_iovs[i].buf_len);
+        iovs[i].buf = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iovs[i].buf), iovs[i].buf_len);
     }
 
     ret = uvwasi_fd_write(&uvwasi, fd, iovs, iovs_len, &num_written);

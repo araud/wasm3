@@ -494,29 +494,112 @@ M3Result  Read_utf8  (cstr_t * o_utf8, bytes_t * io_bytes, cbytes_t i_end)
 
 void* m3MemCpy(u8 *dst, const u8 *src, size_t n)
 {
-    void* plDst = m3LockVMem(dst);
-    void* plStr = m3LockVMem((void*)(src));
+    void* plDst = m3LockVMem(dst, n);
+    void* plStr = m3LockVMem((void*)(src), n);
     return memcpy(plDst, plStr, n);
 }
 
-u8 g_vmem[M3_MaxMem] = {};
+#define MaxPages 10
 
-void* m3LockVMem(void* ptr)
+#ifdef MaxPages
+
+    typedef struct {
+        u8 data[d_m3MemPageSize];
+        size_t flash_offset;
+        size_t counter; //how many times this page was accessed, 4B accesses without swaps will overlap
+    } page_t;
+
+    page_t g_cache[MaxPages] = {};
+    page_t* g_pageIndex[M3_MaxMem/d_m3MemPageSize] = {};  //null means page is not mapped
+
+    u8 g_vmemFlash[M3_MaxMem] = {};
+
+#else
+
+    u8 g_vmem[M3_MaxMem] = {};
+
+#endif
+
+#define M3_CHECK_RET(cond, ret) {if(!(cond)){d_m3Assert(cond); printf("ERROR: %s\n", #cond); return ret;}}
+
+//IMPORTANT: doesn not support fragmented access: entire ptr..size must fit into one page boundary
+void* m3LockVMem(void* ptr, unsigned size)
 {
-    if ((u8 *)ptr > (u8 *)(M3_VMEM))
-    {
-        size_t offset = (size_t)ptr - M3_VMEM;
-        if (offset > M3_MaxMem)
-        {
-            printf("m3LockVMem: %zu > %d", offset, M3_MaxMem);
-            return 0;
-        }
-        return &g_vmem[offset];
-    }
-    else
-    {
+    if ((u8 *)ptr < (u8 *)(M3_VMEM))
         return ptr;
+
+    size_t offset = (size_t)ptr - M3_VMEM;
+    M3_CHECK_RET(offset + size < M3_MaxMem, 0);
+
+#ifndef MaxPages
+    return &g_vmem[offset];
+#else
+
+    size_t nPage = offset/d_m3MemPageSize;
+    size_t start = offset - d_m3MemPageSize*nPage;
+
+    M3_CHECK_RET(d_m3MemPageSize - start >= size, 0);
+
+    page_t* pPage = g_pageIndex[nPage];
+    if (!pPage) // load the page to cache
+    {
+        page_t* pOldestCache = &g_cache[0];  //getting the oldest cache page (least recently touched)
+        for (size_t i = 0; i < MaxPages; ++i)
+            if (g_cache[i].counter < pOldestCache->counter) 
+                pOldestCache = &g_cache[i]; // oldest page has smallest counter
+
+        size_t biggest = 0; // new page must become biggest counter
+        for (size_t i = 0; i < MaxPages; ++i)
+        {
+            if (!g_cache[i].counter) //page is free, first run
+            {
+                pPage = &g_cache[i];
+                break;
+            }
+            // to minimize the impact of size_t counter overflow:
+            if (pOldestCache->counter) //oldest page (smallest counter -1) is subtracted from all pages
+                g_cache[i].counter -= pOldestCache->counter - 1;
+            biggest = (biggest > g_cache[i].counter) ? biggest : g_cache[i].counter;
+        }
+        if (!pPage)
+        {
+            //flushing out current page
+            memcpy(&g_vmemFlash[pOldestCache->flash_offset], pOldestCache->data, d_m3MemPageSize);
+            g_pageIndex[pOldestCache->flash_offset/d_m3MemPageSize] = 0; //no more in memory
+
+            //loading new one
+            pPage = pOldestCache;
+        }
+        pPage->flash_offset = nPage * d_m3MemPageSize;
+        pPage->counter = biggest;
+        g_pageIndex[nPage] = pPage;
+        memcpy(pPage->data, &g_vmemFlash[pPage->flash_offset], d_m3MemPageSize);
     }
+    ++pPage->counter; //need to increment each time the page is accessed, for swap, to calc least recently used page
+    return &pPage->data[start];
+
+#endif
+}
+
+void m3LockVMemTest()
+{
+    u8 * pStart = (u8 *)(M3_VMEM);
+
+    //2 * MaxPages access
+    for (size_t i = 0; i < 2 * MaxPages; ++i)
+    {
+        u8* pByte = (u8*)m3LockVMem(pStart + i*d_m3MemPageSize, 1);
+        *pByte = i + 1;
+    }
+
+    for (size_t i = 0; i < 2 * MaxPages; ++i)
+    {
+        u8* pByte = (u8*)m3LockVMem(pStart + i*d_m3MemPageSize, 1);
+        d_m3Assert(i + 1 == *pByte);
+    }
+
+    //m3MemCpy on page boundary
+
 }
 
 #endif

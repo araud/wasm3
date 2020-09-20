@@ -12,15 +12,21 @@
 
 // TODO: perform bounds checks
 #ifdef M3_VMEM
-    #define m3ApiOffsetToPtr(offset)   m3LockVMem((void*)((u8*)_mem + (u32)(offset)))
+    #define m3ApiOffsetToPtr(offset, size)   m3LockVMem((void*)((u8 *)(M3_VMEM) + (u32)(offset)), size)
+    #define m3ApiPtrToOffset(ptr)      (u32)((u8*)ptr - (u8 *)(M3_VMEM))
 #else
-    #define m3ApiOffsetToPtr(offset)   (void*)((u8*)_mem + (u32)(offset))
+    #define m3ApiOffsetToPtr(offset, size)   (void*)((u8*)_mem + (u32)(offset))
+    #define m3ApiPtrToOffset(ptr)      (u32)((u8*)ptr - (u8*)_mem)
 #endif
-#define m3ApiPtrToOffset(ptr)      (u32)((u8*)ptr - (u8*)_mem)
 
 #define m3ApiReturnType(TYPE)      TYPE* raw_return = ((TYPE*) (_sp));
 #define m3ApiGetArg(TYPE, NAME)    TYPE NAME = * ((TYPE *) (_sp++));
-#define m3ApiGetArgMem(TYPE, NAME) TYPE NAME = (TYPE)m3ApiOffsetToPtr(* ((u32 *) (_sp++)));
+
+#ifdef M3_VMEM
+    #define m3ApiGetArgMem(TYPE, NAME) TYPE NAME = (TYPE)m3ApiOffsetToPtr(* ((u32 *) (_sp++)), sizeof(TYPE));
+#else
+    #define m3ApiGetArgMem(TYPE, NAME) TYPE NAME = (TYPE)m3ApiOffsetToPtr(* ((u32 *) (_sp++)));
+#endif
 
 #define m3ApiRawFunction(NAME)     const void * NAME (IM3Runtime runtime, uint64_t * _sp, void * _mem)
 #define m3ApiReturn(VALUE)         { *raw_return = (VALUE); return m3Err_none; }

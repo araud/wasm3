@@ -37,8 +37,8 @@ void copy_iov_to_host(void* _mem, __wasi_iovec_t* host_iov, __wasi_iovec_t* wasi
 {
     // Convert wasi memory offsets to host addresses
     for (int i = 0; i < iovs_len; i++) {
-        host_iov[i].buf = m3ApiOffsetToPtr(wasi_iov[i].buf);
         host_iov[i].buf_len  = wasi_iov[i].buf_len;
+        host_iov[i].buf = m3ApiOffsetToPtr(wasi_iov[i].buf, host_iov[i].buf_len);
     }
 }
 

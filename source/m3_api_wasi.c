@@ -167,8 +167,8 @@ void copy_iov_to_host(void* _mem, struct iovec* host_iov, wasi_iovec_t* wasi_iov
 {
     // Convert wasi memory offsets to host addresses
     for (int i = 0; i < iovs_len; i++) {
-        host_iov[i].iov_base = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iov[i].buf));
         host_iov[i].iov_len  = m3ApiReadMem32(&wasi_iov[i].buf_len);
+        host_iov[i].iov_base = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iov[i].buf), host_iov[i].iov_len);
     }
 }
 
@@ -467,9 +467,9 @@ m3ApiRawFunction(m3_wasi_unstable_fd_read)
 #else
     ssize_t res = 0;
     for (__wasi_size_t i = 0; i < iovs_len; i++) {
-        void* addr = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iovs[i].buf));
         size_t len = m3ApiReadMem32(&wasi_iovs[i].buf_len);
         if (len == 0) continue;
+        void* addr = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iovs[i].buf), len);
 
         int ret = read (fd, addr, len);
         if (ret < 0) m3ApiReturn(errno_to_wasi(errno));
@@ -502,10 +502,10 @@ m3ApiRawFunction(m3_wasi_unstable_fd_write)
 #else
     ssize_t res = 0;
     for (__wasi_size_t i = 0; i < iovs_len; i++) {
-        void* addr = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iovs[i].buf));
         size_t len = m3ApiReadMem32(&wasi_iovs[i].buf_len);
         if (len == 0) continue;
-
+        void* addr = m3ApiOffsetToPtr(m3ApiReadMem32(&wasi_iovs[i].buf), len);
+ 
         int ret = write (fd, addr, len);
         if (ret < 0) m3ApiReturn(errno_to_wasi(errno));
         res += ret;

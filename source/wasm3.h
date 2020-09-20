@@ -15,11 +15,11 @@
 
 //virtual memory management
 #define M3_VMEM (1ull<<63) //comment out to return to real memory
-#define M3_MaxMem 1024*1024*1024
+#define M3_MaxMem 100*1024*1024
 
 
 #ifdef M3_VMEM
-void* m3LockVMem(void* ptr);
+void* m3LockVMem(void* ptr, unsigned size);
 #endif
 
 #include <stdlib.h>
