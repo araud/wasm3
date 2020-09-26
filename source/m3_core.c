@@ -494,9 +494,27 @@ M3Result  Read_utf8  (cstr_t * o_utf8, bytes_t * io_bytes, cbytes_t i_end)
 
 void* m3MemCpy(u8 *dst, const u8 *src, size_t n)
 {
-    void* plDst = m3LockVMem(dst, n);
-    void* plStr = m3LockVMem((void*)(src), n);
-    return memcpy(plDst, plStr, n);
+    //always copy with max chunck of the page size
+    while(n)
+    {
+        size_t left = n;
+
+        size_t dst_offset = (size_t)dst % d_m3MemPageSize; //where in the page dst starts
+        if (d_m3MemPageSize - dst_offset) //bigger than zero
+            left = M3_MIN(left, d_m3MemPageSize - dst_offset);
+
+        size_t src_offset = (size_t)src % d_m3MemPageSize; //where in the page src starts
+        if (d_m3MemPageSize - src_offset) //bigger than zero
+            left = M3_MIN(left, d_m3MemPageSize - src_offset);
+
+        void* plDst = m3LockVMem(dst, left);
+        void* plStr = m3LockVMem((void*)src, left);
+        memcpy(plDst, plStr, left);
+        n -= left;
+        dst += left;
+        src += left;
+    }
+    return dst;
 }
 
 #define MaxPages 10
@@ -585,6 +603,15 @@ void m3LockVMemTest()
 {
     u8 * pStart = (u8 *)(M3_VMEM);
 
+    //m3MemCpy on page boundary
+    char word[] = "1234567890987654321";
+    m3MemCpy(pStart + d_m3MemPageSize - 10, (u8*)word, sizeof(word));
+
+    char test[sizeof(word)] = {};
+    m3MemCpy((u8*)test, pStart + d_m3MemPageSize - 10, sizeof(word));
+
+    d_m3Assert(0 == strcmp(test, word));
+
     //2 * MaxPages access
     for (size_t i = 0; i < 2 * MaxPages; ++i)
     {
@@ -597,8 +624,6 @@ void m3LockVMemTest()
         u8* pByte = (u8*)m3LockVMem(pStart + i*d_m3MemPageSize, 1);
         d_m3Assert(i + 1 == *pByte);
     }
-
-    //m3MemCpy on page boundary
 
 }
 
